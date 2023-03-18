@@ -44,6 +44,21 @@ end
 notation (name := apply_to_both_side_of_eq) a `ㅅ` b := apply_to_both_side_of_eq a b
 
 
+theorem not_to_not {α : Type} {a b c d : α} (h : a = b ↔ c = d) : a ≠ b ↔ c ≠ d :=
+begin
+    split,
+        intros h1 h2,
+        apply h1,
+        rw ← h at h2,
+        exact h2,
+
+        intros h1 h2,
+        apply h1,
+        rw h at h2,
+        exact h2,
+end
+
+
 -- Start of the proof
 
 axioms 
@@ -1024,10 +1039,25 @@ end
 theorem N_nonzero_imp_lt : ∀ x : N, x ≠ Z → Z < x := PT51
 
 
+lemma lt_neq_S_imp_Slt : ∀ x y : N, x < y → S x ≠ y → S x < y :=
+begin
+    intros x y x_lt_y Sx_neq_y,
+    rcases x_lt_y with ⟨ a, rfl, a_nonzero ⟩,
+    rw [← PT19] at Sx_neq_y,
+    rcases PT26 a a_nonzero with ⟨ y, rfl ⟩,
+    rw [not_to_not (left_cancel_add_iff _ _ _)] at Sx_neq_y,
+    rw [not_to_not (S_iff_both_sides _ _)] at Sx_neq_y,
+    use y,
+    split,
+        rw swap_s_add,
+        exact Sx_neq_y.symm,
+end
+
+
 theorem PT45 : ∀ x y : N, x ≠ y → x < y ∨ y < x :=
 begin
     intros x y, revert x,
-    apply S_induction (λ n, ∀ x : N, x ≠ n → x < n ∨ n < x),
+    apply PA7 (λ n, ∀ x : N, x ≠ n → x < n ∨ n < x),
     split,
     {
         intros x x_nonzero,
@@ -1042,9 +1072,21 @@ begin
             rw x_eq_n,
             exact PT43 n,
         },
-        {
-            
-            sorry,
+        {   
+            specialize IH x x_eq_n,                     clear x_eq_n,
+            cases IH,
+            {
+                rcases IH with ⟨ a, ha, a_nonzero ⟩,
+                left,
+                use S a,
+                refine ⟨ _, (PA1 a).symm ⟩,
+                rw [PA4],
+                rw [ha],
+            },
+            {
+                right,
+                exact lt_neq_S_imp_Slt n x IH x_neq_Sn.symm,
+            },
         },
     },
 end
