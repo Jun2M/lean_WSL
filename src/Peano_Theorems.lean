@@ -73,9 +73,9 @@ axioms
 
 theorem S_nonzero : ∀ n : N, Z ≠ S n := PA1
 theorem S_inj : ∀ m n : N, S m = S n → m = n := PA2
-theorem Z_right_identity_add : ∀ x : N, x + Z = x := PA3
+theorem right_identity_add_Z : ∀ x : N, x + Z = x := PA3
 theorem S_right_associative : ∀ x y : N, x + S y = S (x + y) := PA4
-theorem Z_right_sink_mul : ∀ x : N, x * Z = Z := PA5
+theorem right_sink_mul_Z : ∀ x : N, x * Z = Z := PA5
 theorem S_right_distributive : ∀ x y : N, x * S y = (x * y) + x := PA6
 theorem S_induction : ∀ h : N → Prop, (h(Z) ∧ ∀ n : N, h(n) → h(S n)) → ∀ n : N, h(n) := PA7
 
@@ -90,6 +90,7 @@ begin
         rw h,
 end
 
+
 theorem PT8 : ∀ x : N, Z + x = x :=
 begin
     intro x,
@@ -101,7 +102,7 @@ begin
         calc Z + S n = S (Z + n) : by rw PA4
                  ... = S n       : by rw IH,
 end
-theorem Z_left_identity_add : ∀ x : N, Z + x = x := PT8
+theorem left_identity_add_Z : ∀ x : N, Z + x = x := PT8
 
 
 theorem PT9 : ∀ x y : N, S x + y = S (x + y) :=
@@ -141,7 +142,7 @@ begin
                  ... = S (n + x)    : by rw IH
                  ... = S n + x      : by rw PT9,
 end
-theorem commutative_add : ∀ x y : N, x + y = y + x := PT10
+theorem add_commutative : ∀ x y : N, x + y = y + x := PT10
 
 
 theorem PT11 : ∀ x y z : N, (x + y) + z = x + (y + z) :=
@@ -158,7 +159,7 @@ begin
                        ... = x + S (y + n)      : by rw ← PA4
                        ... = x + (y + S n)      : by rw ← PA4,
 end
-theorem associative_add : ∀ x y z : N, (x + y) + z = x + (y + z) := PT11
+theorem add_associative : ∀ x y z : N, (x + y) + z = x + (y + z) := PT11
 
 
 theorem PT12 : ∀ x : N, Z * x = Z :=
@@ -173,7 +174,7 @@ begin
                  ... = Z + Z        : by rw IH
                  ... = Z            : by rw PA3,
 end
-theorem Z_left_sink_mul : ∀ x : N, Z * x = Z := PT12
+theorem left_sink_mul_Z : ∀ x : N, Z * x = Z := PT12
 
 
 theorem PT13 : ∀ x y : N, (S x) * y = (x * y) + y :=
@@ -210,7 +211,7 @@ begin
                  ... = n * x + x        : by rw IH
                  ... = S n * x          : by rw PT13,
 end
-theorem commutative_mul : ∀ x y : N, x * y = y * x := PT14
+theorem mul_commutative : ∀ x y : N, x * y = y * x := PT14
 
 
 theorem PT15 : ∀ x y z : N, x * (y + z) = x * y + x * z :=
@@ -271,7 +272,7 @@ begin
                        ... = (x * y) * n + x * y    : by rw IH
                        ... = (x * y) * S n          : by rw PA6,
 end
-theorem associative_mul : ∀ x y z : N, x * (y * z) = (x * y) * z := PT17
+theorem mul_associative : ∀ x y z : N, x * (y * z) = (x * y) * z := PT17
 
 
 theorem PT18 : ∀ x y z : N, x + z = y + z → x = y :=
@@ -327,7 +328,7 @@ begin
     rw [PA5], 
     rw [PT8],
 end
-theorem mul_one_N : ∀ x : N, x * S Z = x := PT20
+theorem mul_one_ : ∀ x : N, x * S Z = x := PT20
 
 
 theorem PT21 : ∀ x : N, x * S (S Z) = x + x :=
@@ -336,7 +337,7 @@ begin
     rw [PA6], 
     rw [PT20],
 end
-theorem mul_two_N : ∀ x : N, x * S (S Z) = x + x := PT21
+theorem mul_two_ : ∀ x : N, x * S (S Z) = x + x := PT21
 
 
 theorem PT22 : ∀ x y : N, x + y = Z → (x = Z ∧ y = Z) :=
@@ -495,7 +496,7 @@ begin
     {
         intros x z_nonzero xz_zero,
         rw [PT12] at xz_zero,
-        rw [commutative_mul] at xz_zero,
+        rw [mul_commutative] at xz_zero,
         rw [mul_to_zero_iff _ _ z_nonzero] at xz_zero,
         exact xz_zero,
     },
@@ -523,6 +524,28 @@ end
 theorem right_cancel_mul : ∀ x y z : N, z ≠ Z → (x * z = y * z → x = y) := PT27
 
 
+lemma right_cancel_mul_iff : ∀ x y z : N, z ≠ Z → (x * z = y * z ↔ x = y) :=
+begin
+    intros x y z z_nonzero,
+    split,
+    {
+        exact right_cancel_mul x y z z_nonzero,
+    },
+    {
+        intros H,
+        rw H,
+    },
+end
+
+
+lemma left_cancel_mul_iff : ∀ x y z : N, z ≠ Z → (z * x = z * y ↔ x = y) :=
+begin
+    intros x y z z_nonzero,
+    rw [mul_commutative, mul_commutative z y],
+    exact right_cancel_mul_iff x y z z_nonzero,
+end
+
+
 theorem PT28 : ∀ x : N, x ≠ Z ∧ x ≠ S Z → ∃ y : N, x = S (S y) :=
 begin
     intros x,
@@ -531,117 +554,68 @@ begin
     {
         intros H,
         exfalso,
-        cases H with Z_nonzero one_nonzero,                                     clear one_nonzero,
+        cases H with Z_nonzero one_nonzero,                                         clear one_nonzero,
         contradiction,
     },
     {
         intros n IH H,
-        cases H with Sn_nonzero Sn_not_one,                                     clear Sn_nonzero,
+        cases H with Sn_nonzero Sn_not_one,                                         clear Sn_nonzero,
         by_cases (n = S Z),
             use Z,
             rw [h],
 
-            have n_nonzero := (iff.not (S_iff_both_sides n Z)).mp Sn_not_one,   clear Sn_not_one,
-            cases IH ⟨ n_nonzero, h ⟩ with x hx,                                 clear IH h n_nonzero,
-            use (S x),
-            rw [hx],
+            rw [not_to_not (S_iff_both_sides _ _)] at Sn_not_one,
+            rcases IH ⟨ Sn_not_one, h ⟩ with ⟨ z, rfl ⟩,                            clear IH h Sn_not_one,
+            use (S z),
     },  
 end
 
 lemma Z_only_right_identity_add : ∀ x y : N, x + y = x → y = Z :=
 begin
-    intros x y,
-    apply S_induction (λ n, n + y = n → y = Z),
-    split,
-        intros H,
-        rw [PT8] at H,
-        exact H,
-
-        intros n IH H,
-        rw [PT9] at H,
-        exact IH (PA2 _ _ H),
+    intros x y H,
+    nth_rewrite 1 [← right_identity_add_Z x] at H,
+    rw [left_cancel_add_iff] at H,
+    exact H,
 end
 
-lemma Z_only_left_identity_add : ∀ x y : N, x + y = y → x = Z :=
+
+lemma right_identity_add_iff_Z : ∀ x y : N, x + y = x ↔ y = Z :=
 begin
     intros x y,
-    apply S_induction (λ n, x + n = n → x = Z),
     split,
+    {
+        exact Z_only_right_identity_add x y,
+    },
+    {
         intros H,
-        rw [PA3] at H,
-        exact H,
-
-        intros n IH H,
-        rw [PA4] at H,
-        exact IH (PA2 _ _ H),
+        rw H,
+        exact PA3 x,
+    },
 end
 
-lemma SZ_only_left_identity_mul : ∀ x y : N, y ≠ Z → x * y = y → x = S Z :=
-begin
-    intros x y H H1,
-    nth_rewrite 1 ← PT20 y at H1,
-    nth_rewrite 1 [PT14] at H1,
-    exact PT27 _ _ _ H H1,
-end
-
-lemma SZ_only_right_identity_mul : ∀ x y : N, x ≠ Z → x * y = x → y = S Z :=
-begin
-    intros x y H H1,
-    nth_rewrite 1 ← PT20 x at H1,
-    nth_rewrite 1 [PT14] at H1,
-    rw [PT14] at H1,
-    exact PT27 _ _ _ H H1,
-end
 
 lemma x_add_y_add_z_eq_x_imp_y_and_z_zero : ∀ x y z : N, x + y + z = x → y = Z ∧ z = Z :=
 begin
     intros x y z H,
-    rw [associative_add] at H,
-    have yz_zero := Z_only_right_identity_add _ _ H, clear H,
-    rw add_to_zero_iff at yz_zero,
-    exact yz_zero,
+    rw [add_associative] at H,
+    rw [right_identity_add_iff_Z] at H,
+    rw [add_to_zero_iff] at H,
+    exact H,
 end
-
 
 
 -- theorem PT29 : ∀ n m : ℕ, n ≠ m → n' ≠ m'
 -- theorem PT30 : ∀ n m : ℕ, n' + m' = (n + m)' ∧ n' * m' = (n * m)'
 
 reserve infix `<`:50
-reserve infix `<'`:50
 reserve infix `≤`:50
 
 def le (x y : N) := ∃ z : N, x + z = y
 def lt (x y : N) := ∃ z : N, x + z = y ∧ z ≠ Z
-def lt' (x y : N) := ∃ z : N, z ≠ Z ∧ x + z = y
 
 notation (name := le) x ` ≤ ` y := le x y
 notation (name := lt) x ` < ` y := lt x y
-notation (name := lt') x ` <' ` y := lt' x y
 
-lemma lt_iff_lt' : ∀ x y : N, x < y ↔ x <' y :=
-begin
-    intros x y,
-    split,
-    {
-        intros H,
-        rcases H with ⟨ z, H1, H2 ⟩,
-        use z,
-        split,
-            exact H2,
-
-            exact H1,
-    },
-    {
-        intros H,
-        rcases H with ⟨ z, H1, H2 ⟩,
-        use z,
-        split,
-            exact H2,
-
-            exact H1,
-    },
-end
 
 lemma eq_imp_le : ∀ x y : N, x = y → x ≤ y :=
 begin
@@ -659,47 +633,6 @@ begin
     exact H1,
 end
 
-lemma Sle_imp_le : ∀ x y : N, S x ≤ y → x ≤ y :=
-begin
-    intros x y H,
-    rcases H with ⟨ z, H1 ⟩,
-    use (S z),
-    rw [← swap_s_add],
-    exact H1,
-end
-
-lemma le_imp_Sle : ∀ x y : N, x ≤ y → x ≤ S y :=
-begin
-    intros x y H,
-    rcases H with ⟨ z, H1 ⟩,
-    use (S z),
-    rw [PA4],
-    rw [H1],
-end
-
-lemma Slt_imp_lt : ∀ x y : N, S x < y → x < y :=
-begin
-    intros x y H,
-    rcases H with ⟨ z, Hz, z_nonzero ⟩,
-    use (S z),
-    split,
-        rw [← swap_s_add],
-        exact Hz,
-
-        exact (PA1 z).symm,
-end
-
-lemma lt_imp_Slt : ∀ x y : N, x < y → x < S y :=
-begin
-    intros x y H,
-    rcases H with ⟨ z, Hz, z_nonzero ⟩,
-    use (S z),
-    split,
-        rw [PA4],
-        rw [Hz],
-
-        exact (PA1 z).symm,
-end
 
 lemma le_imp_nlt : ∀ x y : N, x ≤ y → ¬ y < x :=
 begin
@@ -723,38 +656,35 @@ begin
 end
 
 
-lemma le_Z_imp_eq_Z : ∀ x : N, x ≤ Z → x = Z :=
+lemma le_Z_iff_eq_Z : ∀ x : N, x ≤ Z ↔ x = Z :=
 begin
-    intros x H,
-    rcases H with ⟨ z, H1 ⟩,
-    rw [add_to_zero_iff] at H1,
-    exact H1.1,
-end
-
-
-lemma le_right_cancel_iff : ∀ x y z : N, x + y ≤ x + z ↔ y ≤ z :=
-begin
-    intros x y z,
-    split,
+    intros x,
+    split;
+    intro H,
     {
-        intros H,
-        rcases H with ⟨ a, Ha ⟩,
-        use a,
-        rw [associative_add] at Ha,
-        rw left_cancel_add_iff x (y+a) z at Ha,
-        exact Ha,
+        rcases H with ⟨ z, H1 ⟩,
+        rw [add_to_zero_iff] at H1,
+        exact H1.1,
     },
     {
-        intros H,
-        rcases H with ⟨ a, Ha ⟩,
-        use a,
-        rw [associative_add],
-        rw [Ha],
+        use Z,
+        rw H,
+        exact PA3 Z,
     },
 end
 
+-- proved here for convenience
+theorem PT56 : ∀ x : N, ¬ x < Z :=
+begin
+    intros x x_lt_Z,
+    rcases x_lt_Z with ⟨ a, ha, a_nonzero ⟩,
+    cases add_to_zero _ _ ha with y_zero a_zero, clear ha,
+    exact a_nonzero a_zero,
+end
+theorem nlt_Z : ∀ x : N, x < Z → false := PT56
 
-lemma le_left_cancel_iff : ∀ x y z : N, x + y ≤ x + z ↔ y ≤ z :=
+
+lemma left_cancel_add_le_iff : ∀ x y z : N, x + y ≤ x + z ↔ y ≤ z :=
 begin
     intros x y z,
     split,
@@ -762,7 +692,7 @@ begin
         intros H,
         rcases H with ⟨ a, Ha ⟩,
         use a,
-        rw [associative_add] at Ha,
+        rw [add_associative] at Ha,
         rw left_cancel_add_iff x (y+a) z at Ha,
         exact Ha,
     },
@@ -770,13 +700,21 @@ begin
         intros H,
         rcases H with ⟨ a, Ha ⟩,
         use a,
-        rw [associative_add],
+        rw [add_associative],
         rw [Ha],
     },
 end
 
 
-lemma lt_right_cancel_iff : ∀ x y z : N, x + y < z + y ↔ x < z :=
+lemma right_cancel_add_le_iff : ∀ x y z : N, x + y ≤ z + y ↔ x ≤ z :=
+begin
+    intros x y z,
+    rw [add_commutative x y, add_commutative z y],
+    exact left_cancel_add_le_iff _ _ _,
+end
+
+
+lemma left_cancel_add_lt_iff : ∀ x y z : N, x + y < x + z ↔ y < z :=
 begin
     intros x y z,
     split,
@@ -785,8 +723,8 @@ begin
         rcases H with ⟨ a, Ha, a_nonzero ⟩,
         use a,
         split,
-            rw [associative_add, commutative_add y a, ← associative_add] at Ha,
-            rw right_cancel_add_iff (x+a) y z at Ha,
+            rw [add_associative] at Ha,
+            rw [left_cancel_add_iff x (y+a) z] at Ha,
             exact Ha,
 
             exact a_nonzero,
@@ -796,7 +734,7 @@ begin
         rcases H with ⟨ a, Ha, a_nonzero ⟩,
         use a,
         split,
-            rw [associative_add, commutative_add y a, ← associative_add],
+            rw [add_associative],
             rw [Ha],
 
             exact a_nonzero,
@@ -804,60 +742,22 @@ begin
 end
 
 
-lemma lt_left_cancel_iff : ∀ x y z : N, x + y < x + z ↔ y < z :=
+lemma right_cancel_add_lt_iff : ∀ x y z : N, x + y < z + y ↔ x < z :=
 begin
     intros x y z,
-    split,
-    {
-        intros H,
-        rcases H with ⟨ a, Ha, a_nonzero ⟩,
-        use a,
-        split,
-            rw [associative_add] at Ha,
-            rw left_cancel_add_iff x (y+a) z at Ha,
-            exact Ha,
-
-            exact a_nonzero,
-    },
-    {
-        intros H,
-        rcases H with ⟨ a, Ha, a_nonzero ⟩,
-        use a,
-        split,
-            rw [associative_add],
-            rw [Ha],
-
-            exact a_nonzero,
-    },
+    rw [add_commutative x y, add_commutative z y],
+    exact left_cancel_add_lt_iff _ _ _,
 end
 
-
--- lemma nlt_imp_le : ∀ x y : N, ¬ x < y → y ≤ x :=
--- begin
---     intros x y,
---     apply S_induction (λ n, ¬ n < y → y ≤ n),
---     split,
---     {
---         intros H,
---         rw lt_iff_lt' at H,
---         have A : ¬ (∃ z : N, z ≠ Z ∧ Z + z = y) := H,
---         push_neg at A,
-
---     },
---     {
-        
---     },
-    
--- end
 
 theorem PT31 : ∀ x : N, ¬  x < x :=
 begin
     intros x H,
     rcases H with ⟨ a, ha, a_nonzero ⟩,
-    have a_zero := (Z_only_right_identity_add x a ha),
-    exact a_nonzero a_zero,
+    rw [right_identity_add_iff_Z _ _] at ha,
+    exact a_nonzero ha,
 end
-theorem N_irrefl_lt : ∀ x : N, x < x → false := PT31
+theorem lt_irreflexive : ∀ x : N, x < x → false := PT31
 
 
 theorem PT32 : ∀ x y z : N, x < y ∧ y < z → x < z :=
@@ -868,13 +768,13 @@ begin
 
     use (a + b),
     split,
-        rw [← associative_add x a b, ha, hb],
+        rw [← add_associative x a b, ha, hb],
         
         intro ab_zero,
         cases add_to_zero _ _ ab_zero with a_zero b_zero, clear ab_zero,
         exact a_nonzero a_zero,
 end
-theorem N_trans_lt : ∀ x y z : N, x < y ∧ y < z → x < z := PT32
+theorem lt_transitive : ∀ x y z : N, x < y ∧ y < z → x < z := PT32
 
 
 theorem PT33 : ∀ x y : N, x < y → ¬ y < x :=
@@ -887,20 +787,16 @@ begin
     cases x_add_y_add_z_eq_x_imp_y_and_z_zero _ _ _ hb with a_zero b_zero,
     exact a_nonzero a_zero,
 end
-theorem N_nonsym_lt : ∀ x y : N, x < y → y < x → false := PT33
+theorem lt_nonsym : ∀ x y : N, x < y → y < x → false := PT33
 
 
 theorem PT34 : ∀ x y z : N, x < y → x + z < y + z :=
 begin
-    intros x y z H,
-    rcases H with ⟨ a, ha, a_nonzero ⟩,
-    rw [lt_right_cancel_iff x z y],
-    use a,
-    refine ⟨ _, a_nonzero ⟩,
-    rw [ha],
+    intros x y z,
+    exact (right_cancel_add_lt_iff x z y).mpr,
 end
-
 theorem N_right_add_lt : ∀ x y z : N, x < y → x + z < y + z := PT34
+
 
 theorem PT35 : ∀ x : N, x ≤ x :=
 begin
@@ -908,25 +804,23 @@ begin
     use Z,
     exact PA3 _,
 end
+theorem le_reflexive : ∀ x : N, x ≤ x := PT35
 
-theorem N_refl_le : ∀ x : N, x ≤ x := PT35
 
 theorem PT36 : ∀ x y z : N, x ≤ y ∧ y ≤ z → x ≤ z :=
 begin
     intros x y z H,
     rcases H with ⟨ ⟨ a, rfl ⟩, ⟨ b, rfl ⟩ ⟩,
     use (a + b),
-    rw [← associative_add x a b],
+    rw [← add_associative x a b],
 end
-theorem N_trans_le : ∀ x y z : N, x ≤ y ∧ y ≤ z → x ≤ z := PT36
+theorem le_transitive : ∀ x y z : N, x ≤ y ∧ y ≤ z → x ≤ z := PT36
 
 
 theorem PT37 : ∀ x y z : N, x ≤ y → x + z ≤ y + z :=
 begin
-    intros x y z H,
-    rcases H with ⟨ a, rfl ⟩,
-    use a,
-    rw [associative_add, commutative_add z a, ← associative_add],
+    intros x y z,
+    exact (right_cancel_add_le_iff x z y).mpr,
 end
 theorem N_right_add_le : ∀ x y z : N, x ≤ y → x + z ≤ y + z := PT37
 
@@ -938,7 +832,7 @@ begin
 
     use (a+b),
     split,
-        rw [← associative_add x a b],
+        rw [← add_associative x a b],
 
         intro ab_nonzero,
         cases (add_to_zero _ _ ab_nonzero) with a_zero b_zero,
@@ -951,7 +845,7 @@ begin
     use x,
     exact PT8 _,
 end
-theorem N_zero_le : ∀ x : N, Z ≤ x := PT39
+theorem zero_le_ : ∀ x : N, Z ≤ x := PT39
 
 
 theorem PT40 : ∀ x : N, Z < S x :=
@@ -962,7 +856,7 @@ begin
         rw [PT8],
         exact (PA1 x).symm,
 end
-theorem N_zero_lt : ∀ x : N, Z < S x := PT40
+theorem zero_lt_S : ∀ x : N, Z < S x := PT40
 
 
 theorem PT41 : ∀ x y : N, x < y ↔ S x ≤ y :=
@@ -986,7 +880,7 @@ begin
     }
         
 end
-theorem N_lt_iff_S_le : ∀ x y : N, x < y ↔ S x ≤ y := PT41
+theorem lt_iff_S_le : ∀ x y : N, x < y ↔ S x ≤ y := PT41
 
 
 theorem PT42 : ∀ x y : N, x ≤ y ↔ x < S y :=
@@ -1011,7 +905,7 @@ begin
         exact ha,
     },
 end
-theorem N_le_iff_S_lt : ∀ x y : N, x ≤ y ↔ x < S y := PT42
+theorem le_iff_S_lt : ∀ x y : N, x ≤ y ↔ x < S y := PT42
 
 
 theorem PT43 : ∀ x : N, x < S x :=
@@ -1022,7 +916,7 @@ begin
         exact PT19 x,
         exact (PA1 Z).symm,
 end
-theorem N_lt_Self : ∀ x : N, x < S x := PT43
+theorem lt_S_self : ∀ x : N, x < S x := PT43
 
 
 -- theorem PT44 : ∀ n : ℕ, n' < (n + 1)'
@@ -1036,18 +930,18 @@ begin
         exact PT8 _,
         exact H,
 end
-theorem N_nonzero_imp_lt : ∀ x : N, x ≠ Z → Z < x := PT51
+theorem nonzero_imp_lt : ∀ x : N, x ≠ Z → Z < x := PT51
 
 
-lemma lt_neq_S_imp_Slt : ∀ x y : N, x < y → S x ≠ y → S x < y :=
+lemma lt_Sneq_imp_Slt : ∀ x y : N, x < y → S x ≠ y → S x < y :=
 begin
     intros x y x_lt_y Sx_neq_y,
     rcases x_lt_y with ⟨ a, rfl, a_nonzero ⟩,
+    rcases PT26 a a_nonzero with ⟨ a', rfl ⟩,
     rw [← PT19] at Sx_neq_y,
-    rcases PT26 a a_nonzero with ⟨ y, rfl ⟩,
     rw [not_to_not (left_cancel_add_iff _ _ _)] at Sx_neq_y,
     rw [not_to_not (S_iff_both_sides _ _)] at Sx_neq_y,
-    use y,
+    use a',
     split,
         rw swap_s_add,
         exact Sx_neq_y.symm,
@@ -1068,24 +962,23 @@ begin
         intros n IH x x_neq_Sn,
         by_cases x_eq_n : x = n,
         {
-            left,
-            rw x_eq_n,
+            left,                                               clear IH x_neq_Sn y,
+            rw x_eq_n,                                          clear x_eq_n,
             exact PT43 n,
         },
         {   
             specialize IH x x_eq_n,                     clear x_eq_n,
             cases IH,
             {
-                rcases IH with ⟨ a, ha, a_nonzero ⟩,
+                rcases IH with ⟨ a, rfl, a_nonzero ⟩,
                 left,
                 use S a,
                 refine ⟨ _, (PA1 a).symm ⟩,
                 rw [PA4],
-                rw [ha],
             },
             {
                 right,
-                exact lt_neq_S_imp_Slt n x IH x_neq_Sn.symm,
+                exact lt_Sneq_imp_Slt n x IH x_neq_Sn.symm,
             },
         },
     },
@@ -1112,13 +1005,6 @@ end
 theorem lt_or_eq_or_gt : ∀ x y : N, x < y ∨ x = y ∨ y < x := PT46
 
 
-lemma N_lt_imp_le : ∀ x y : N, x < y → x ≤ y :=
-begin
-    intros x y H,
-    rcases H with ⟨ a, rfl, a_nonzero ⟩,
-    use a,
-end
-
 theorem PT47 : ∀ x y : N, x ≤ y ∨ y ≤ x :=
 begin
     intros x y,
@@ -1126,22 +1012,21 @@ begin
     {
         left,
         rw H,
-        exact N_refl_le _,
+        exact le_reflexive _,
     },
     {
         cases N_lt_or_gt x y H,
         {
             left,
-            exact N_lt_imp_le _ _ h,
-            
+            exact lt_imp_le _ _ h,
         },
         {
             right,
-            exact N_lt_imp_le _ _ h,
+            exact lt_imp_le _ _ h,
         },
     },
 end
-theorem N_le_or_le : ∀ x y : N, x ≤ y ∨ y ≤ x := PT47
+theorem le_or_le : ∀ x y : N, x ≤ y ∨ y ≤ x := PT47
 
 
 theorem PT48 : ∀ x y : N, x ≤ x + y :=
@@ -1156,7 +1041,7 @@ begin
     intros x y z H,
     rcases H with ⟨ a, rfl ⟩,
     use a + z,
-    rw [associative_add],
+    rw [add_associative],
 end
 
 
@@ -1165,7 +1050,7 @@ begin
     intros x y z H,
     rcases H with ⟨ a, rfl ⟩,
     use z + a,
-    rw [← associative_add, ← associative_add, commutative_add x z],
+    rw [← add_associative, ← add_associative, add_commutative x z],
 end
 
 
@@ -1185,7 +1070,7 @@ begin
     intros x y H,
     use y,
     split,
-        rw [commutative_add],
+        rw [add_commutative],
         exact H,
 end
 
@@ -1210,28 +1095,27 @@ theorem N_mul_right_le : ∀ x y : N, y ≠ Z → x ≤ x * y := PT50
 --         exact PT8 _,
 --         exact H,
 -- end
--- theorem N_nonzero_imp_lt : ∀ x : N, x ≠ Z → Z < x := PT51
+-- theorem nonzero_imp_lt : ∀ x : N, x ≠ Z → Z < x := PT51
 
 
-lemma N_nonzero_iff_lt : ∀ x : N, x ≠ Z ↔ Z < x :=
+lemma nonzero_iff_lt : ∀ x : N, x ≠ Z ↔ Z < x :=
 begin
     intro x,
     split,
         exact PT51 x,
 
         intros H x_zero,
-        have x_le_Z := eq_imp_le x Z x_zero,    clear x_zero,
-        exact le_imp_nlt x Z x_le_Z H,
+        rw x_zero at H,                     clear x_zero,
+        exact lt_irreflexive _ H,
 end
 
 
 theorem PT52 : ∀ x y : N, Z < x ∧ Z < y → Z < x * y :=
 begin
     intros x y H,
-    rcases H with ⟨ ⟨ a, rfl, a_nonzero ⟩, y_nonzero ⟩,
-    rw [← N_nonzero_iff_lt] at y_nonzero,
-    rw [PT8],
-    apply PT51,
+    rw [← nonzero_iff_lt, ← nonzero_iff_lt] at H,
+    rw [← nonzero_iff_lt],
+    rcases H with ⟨ a_nonzero, y_nonzero ⟩,
     exact nonzero_nonzero_mul_nonzero _ _ a_nonzero y_nonzero,
 end
 theorem N_pos_mul_pos : ∀ x y : N, Z < x ∧ Z < y → Z < x * y := PT52
@@ -1241,10 +1125,8 @@ theorem PT53 : ∀ x y : N, x ≠ Z ∧ S Z < y → x < x * y :=
 begin
     intros x y H,
     rcases H with ⟨ x_nonzero, ⟨ b, rfl, b_nonzero ⟩ ⟩,
-    rw [commutative_add],
-    rw [PT19],
-    rw [PA6],
-    rw [commutative_add],
+    rw [left_distribute_mul],
+    rw [mul_one_],
     apply lt_add_right_N,
     exact nonzero_nonzero_mul_nonzero _ _ x_nonzero b_nonzero,
 end
@@ -1263,24 +1145,20 @@ begin
         exact nonzero_nonzero_mul_nonzero _ _ a_nonzero Sn_nonzero,
     },
     {
-        intro H,    clear Sn_nonzero,
-        by_contra,
+        intro H,                                                                    clear Sn_nonzero,
         cases PT46 x y,
             {
-                apply h,
-                exact h_1,
+                exact h,
             },
-
-            clear h,
-            rcases H with ⟨ b, hb, b_nonzero ⟩,
-            rcases h_1 with ⟨ rfl, rfl ⟩,
+            exfalso,
+            rcases h with ⟨ rfl, rfl ⟩,
             {
-                apply b_nonzero,
-                exact (Z_only_right_identity_add _ _ hb),
+                exact PT31 (x * z) H,
             },
             {
-                rcases h_1 with ⟨ a, rfl, a_nonzero ⟩,                              clear a_nonzero,
-                rw [ right_distribute_mul, associative_add] at hb,
+                rcases H with ⟨ b, hb, b_nonzero ⟩,
+                rcases h with ⟨ a, rfl, a_nonzero ⟩,                                clear a_nonzero,
+                rw [ right_distribute_mul, add_associative] at hb,
                 have azb_zero := Z_only_right_identity_add _ _ hb,                  clear hb,
                 cases add_to_zero _ _ azb_zero with az_zero b_zero,                 clear azb_zero,
                 exact b_nonzero b_zero,
@@ -1306,31 +1184,29 @@ begin
             exact h,
 
             rcases h with ⟨ a, rfl ⟩,
-            rw [right_distribute_mul] at H,
-
-            nth_rewrite 1 [(PA3 (y*z)).symm] at H,
-            rw [le_left_cancel_iff] at H,
-            rcases H with ⟨ b, azb_zero ⟩,
-            cases add_to_zero _ _ azb_zero with az_zero b_zero,      clear azb_zero b_zero,
-            
-            rw [commutative_mul] at az_zero,
-            have a_zero := mul_to_zero _ _ Sn_nonzero az_zero,      clear az_zero,
-            rw a_zero,                                              clear a_zero,
+            rw [(PA3 (y*z)).symm]       at H,
+            rw [right_distribute_mul]   at H,
+            rw [left_cancel_add_le_iff] at H,
+            rw [le_Z_iff_eq_Z]          at H,
+            rw [mul_commutative]        at H,
+            have a_zero := mul_to_zero _ _ Sn_nonzero H,        clear Sn_nonzero H,
+            rw a_zero,                                          clear a_zero,
             rw [PA3],
             exact (PT35 y),
     },
 end
-
 theorem N_right_cancel_mul_le : ∀ x y z : N, z ≠ Z → (x ≤ y ↔ x * z ≤ y * z) := PT55
 
-theorem PT56 : ∀ x : N, x < Z → false :=
-begin
-    intros x x_lt_Z,
-    rcases x_lt_Z with ⟨ a, ha, a_nonzero ⟩,
-    cases add_to_zero _ _ ha with y_zero a_zero, clear ha,
-    exact a_nonzero a_zero,
-end
-theorem N_lt_Z_imp_false : ∀ x : N, x < Z → false := PT56
+
+-- Proved at the start of ≤ & < section.
+-- theorem PT56 : ∀ x : N, x < Z → false :=
+-- begin
+--     intros x x_lt_Z,
+--     rcases x_lt_Z with ⟨ a, ha, a_nonzero ⟩,
+--     cases add_to_zero _ _ ha with y_zero a_zero, clear ha,
+--     exact a_nonzero a_zero,
+-- end
+-- theorem nlt_Z : ∀ x : N, x < Z → false := PT56
 
 
 theorem PT57 : ∀ x y : N, x ≤ y ∧ y ≤ x → x = y :=
@@ -1343,7 +1219,7 @@ begin
     rw [PA3] at ha,
     exact ha,
 end
-theorem N_le_antisymm : ∀ x y : N, x ≤ y ∧ y ≤ x → x = y := PT57
+theorem le_antisymmetric : ∀ x y : N, x ≤ y ∧ y ≤ x → x = y := PT57
 
 
 -- theorem PT58 : ∀ n : ℕ, x = Z ∨ x = S Z ∨ x = S (S Z) ∨ ... ∨ x = n' ↔ x ≤ n'
@@ -1360,7 +1236,7 @@ theorem PT59 : ∀ x : N, x | x :=
 begin
     intro x,
     use S Z,
-    rw [mul_one_N],
+    rw [mul_one_],
 end
 theorem N_divides_self : ∀ x : N, x | x := PT59
 
@@ -1369,8 +1245,8 @@ theorem PT60 : ∀ x : N, S Z | x :=
 begin
     intro x,
     use x,
-    rw [commutative_mul],
-    rw [mul_one_N],
+    rw [mul_commutative],
+    rw [mul_one_],
 end
 theorem N_one_divides : ∀ x : N, S Z | x := PT60
 
@@ -1389,7 +1265,7 @@ begin
     intros x y z H,
     rcases H with ⟨ ⟨ a, rfl ⟩, ⟨ b, rfl ⟩ ⟩,
     use a * b,
-    rw [associative_mul],
+    rw [mul_associative],
 end
 theorem N_divides_trans : ∀ x y z : N, x | y ∧ y | z → x | z := PT62
 
@@ -1416,17 +1292,17 @@ theorem PT64 : ∀ x y : N, x | y ∧ y | x → x = y :=
 begin
     intros x y H,
     rcases H with ⟨ ⟨ a, ha ⟩, ⟨ b, rfl ⟩ ⟩,
-    rw [← associative_mul] at ha,
+    rw [← mul_associative] at ha,
     by_cases y_zero : y = Z,
     {
         rw [y_zero],         clear y_zero ha,
         rw [PT12],
     },
     {
-        have ha_symm : y * (b * a) = y := ha.symm,                                      clear ha,
-        have ba_one := SZ_only_right_identity_mul y (b*a) y_zero ha_symm,               clear ha_symm y_zero,
-        cases mul_to_one _ _ ba_one with b_one a_one,                                   clear ba_one a_one,
-        rw [b_one],                                                                     clear b_one,
+        nth_rewrite 0 [← mul_one_ y] at ha,
+        rw [left_cancel_mul_iff _ _ _ y_zero] at ha,
+        cases mul_to_one _ _ ha.symm with b_one a_one,                              clear ha a_one,
+        rw [b_one],                                                                 clear b_one,
         exact PA3 y,
     },
 end
@@ -1438,7 +1314,7 @@ begin
     intros x y z H,
     rcases H with ⟨ a, rfl ⟩,
     use a * z,
-    rw [associative_mul],
+    rw [mul_associative],
 end
 theorem N_divides_mul : ∀ x y z : N, x | y → x | y*z := PT65
 
@@ -1451,42 +1327,6 @@ begin
     rw [← left_distribute_mul],
 end
 theorem N_divides_add : ∀ x y z : N, x | y ∧ x | z → x | y + z := PT66
-
-
-lemma PT67_uniqueness_part : ∀ x y : N, y ≠ Z → (∀ u v u1 v1 : N, (x = y * u + v ∧ v < y) → (x = y * u1 + v1 ∧ v1 < y) → (u = u1 ∧ v = v1)) :=
-begin
-    intros x y y_nonzero u v u1 v1 uv_qr' u1v1_qr',
-    rcases uv_qr' with ⟨ uv_qr, v_lt_y ⟩,
-    rcases u1v1_qr' with ⟨ u1v1_qr, v1_lt_y ⟩,
-    rw u1v1_qr at uv_qr,                                                            clear u1v1_qr x,
-
-    by_cases h' : u = u1,
-    {
-        refine ⟨ h', _ ⟩,
-        rw [← h'] at uv_qr,
-        rw [left_cancel_add_iff] at uv_qr,
-        rw uv_qr,        
-    },
-    exfalso,                                                                        clear y_nonzero,
-    cases (PT45 _ _ h') with h h;                                                   clear h';
-    rcases h with ⟨ w, rfl, w_nonzero ⟩;
-    rw [left_distribute_mul] at uv_qr;
-    rw [associative_add] at uv_qr;
-    rw [left_cancel_add_iff] at uv_qr;
-    have y_le_yw : y ≤ y * w := PT50 y w w_nonzero;                                 clear w_nonzero,
-    {
-        have y_le_ywv1 : y ≤ y * w + v1 := le_add_right_N y (y * w) v1 y_le_yw,     clear y_le_yw v1_lt_y u,
-        rw [uv_qr] at y_le_ywv1,                                                    clear uv_qr w v1,
-        apply (le_imp_nlt y v y_le_ywv1),                                           clear y_le_ywv1,
-        exact v_lt_y,
-    },
-    {
-        have y_le_ywv : y ≤ y * w + v := le_add_right_N y (y * w) v y_le_yw,        clear y_le_yw v_lt_y u1,
-        rw [← uv_qr] at y_le_ywv,                                                   clear uv_qr w v,
-        apply (le_imp_nlt y v1 y_le_ywv),                                           clear y_le_ywv,
-        exact v1_lt_y,
-    },
-end
 
 
 theorem PT67_induction_part : ∀ x y : N, y ≠ Z → (∃ u v : N, (x = y * u + v ∧ v < y)) :=
@@ -1510,29 +1350,65 @@ begin
         have three_options := PT46 (S v) y,
         cases three_options,
         {
-            use u,                                  clear v_lt_y y_nonzero,
+            use u,                                              clear v_lt_y y_nonzero,
             use S v,
-            refine ⟨ _, three_options ⟩,            clear three_options,
-            rw [H],                                 clear H x,
+            refine ⟨ _, three_options ⟩,                        clear three_options,
+            rw [H],                                             clear H x,
             rw [← PA4],
         },
         cases three_options,
         {
-            use S u,                                clear v_lt_y,
+            use S u,                                            clear v_lt_y,
             use Z,
             refine ⟨ _, (PT51 y y_nonzero) ⟩,
-            rw [H],                                 clear H y_nonzero x,
+            rw [H],                                             clear H y_nonzero x,
             rw [PA6],
             rw [PA3],
             rw [← PA4],
             rw [three_options],
         },
         {
-            exfalso,                                clear y_nonzero H x u,
+            exfalso,                                            clear y_nonzero H x u,
             rw [← PT42] at three_options,
-            apply (le_imp_nlt y v three_options),   clear three_options,
+            apply (le_imp_nlt y v three_options),               clear three_options,
             exact v_lt_y,
         },
+    },
+end
+
+
+lemma PT67_uniqueness_part : ∀ x y : N, y ≠ Z → (∀ u v u1 v1 : N, (x = y * u + v ∧ v < y) → (x = y * u1 + v1 ∧ v1 < y) → (u = u1 ∧ v = v1)) :=
+begin
+    intros x y y_nonzero u v u1 v1 uv_qr' u1v1_qr',
+    rcases uv_qr' with ⟨ uv_qr, v_lt_y ⟩,
+    rcases u1v1_qr' with ⟨ u1v1_qr, v1_lt_y ⟩,
+    rw u1v1_qr at uv_qr,                                                            clear u1v1_qr x,
+
+    by_cases h' : u = u1,
+    {
+        refine ⟨ h', _ ⟩,
+        rw [← h'] at uv_qr,
+        rw [left_cancel_add_iff] at uv_qr,
+        rw uv_qr,        
+    },
+    exfalso,                                                                        clear y_nonzero,
+    cases (PT45 _ _ h') with h h;                                                   clear h';
+    rcases h with ⟨ w, rfl, w_nonzero ⟩;
+    rw [left_distribute_mul] at uv_qr;
+    rw [add_associative] at uv_qr;
+    rw [left_cancel_add_iff] at uv_qr;
+    have y_le_yw : y ≤ y * w := PT50 y w w_nonzero;                                 clear w_nonzero,
+    {
+        have y_le_ywv1 : y ≤ y * w + v1 := le_add_right_N y (y * w) v1 y_le_yw,     clear y_le_yw v1_lt_y u,
+        rw [uv_qr] at y_le_ywv1,                                                    clear uv_qr w v1,
+        apply (le_imp_nlt y v y_le_ywv1),                                           clear y_le_ywv1,
+        exact v_lt_y,
+    },
+    {
+        have y_le_ywv : y ≤ y * w + v := le_add_right_N y (y * w) v y_le_yw,        clear y_le_yw v_lt_y u1,
+        rw [← uv_qr] at y_le_ywv,                                                   clear uv_qr w v,
+        apply (le_imp_nlt y v1 y_le_ywv),                                           clear y_le_ywv,
+        exact v1_lt_y,
     },
 end
 
