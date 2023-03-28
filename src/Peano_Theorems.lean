@@ -731,12 +731,10 @@ begin
     },
     {
         intros H,
-        rcases H with ⟨ a, Ha, a_nonzero ⟩,
+        rcases H with ⟨ a, rfl, a_nonzero ⟩,
         use a,
         split,
             rw [add_associative],
-            rw [Ha],
-
             exact a_nonzero,
     },
 end
@@ -771,7 +769,7 @@ begin
         rw [← add_associative x a b, ha, hb],
         
         intro ab_zero,
-        cases add_to_zero _ _ ab_zero with a_zero b_zero, clear ab_zero,
+        cases add_to_zero _ _ ab_zero with a_zero b_zero,       clear ab_zero,
         exact a_nonzero a_zero,
 end
 theorem lt_transitive : ∀ x y z : N, x < y ∧ y < z → x < z := PT32
@@ -866,7 +864,7 @@ begin
     intro H,
     {
         rcases H with ⟨ a, rfl, a_nonzero ⟩,
-        rcases PT26 a a_nonzero with ⟨ b, rfl ⟩,    clear a_nonzero,
+        rcases PT26 a a_nonzero with ⟨ b, rfl ⟩,                clear a_nonzero,
         use b,
         exact swap_s_add _ _,
     },
@@ -898,7 +896,7 @@ begin
     },
     {
         rcases H with ⟨ a, ha, a_nonzero ⟩,
-        rcases PT26 a a_nonzero with ⟨ b, rfl ⟩,    clear a_nonzero,
+        rcases PT26 a a_nonzero with ⟨ b, rfl ⟩,                clear a_nonzero,
         use b,
         rw [PA4] at ha,
         rw [S_iff_both_sides] at ha,
@@ -933,21 +931,6 @@ end
 theorem nonzero_imp_lt : ∀ x : N, x ≠ Z → Z < x := PT51
 
 
-lemma lt_Sneq_imp_Slt : ∀ x y : N, x < y → S x ≠ y → S x < y :=
-begin
-    intros x y x_lt_y Sx_neq_y,
-    rcases x_lt_y with ⟨ a, rfl, a_nonzero ⟩,
-    rcases PT26 a a_nonzero with ⟨ a', rfl ⟩,
-    rw [← PT19] at Sx_neq_y,
-    rw [not_to_not (left_cancel_add_iff _ _ _)] at Sx_neq_y,
-    rw [not_to_not (S_iff_both_sides _ _)] at Sx_neq_y,
-    use a',
-    split,
-        rw swap_s_add,
-        exact Sx_neq_y.symm,
-end
-
-
 theorem PT45 : ∀ x y : N, x ≠ y → x < y ∨ y < x :=
 begin
     intros x y, revert x,
@@ -960,26 +943,28 @@ begin
     },
     {
         intros n IH x x_neq_Sn,
-        by_cases x_eq_n : x = n,
+        by_cases x_eq_Z : x = Z,
         {
-            left,                                               clear IH x_neq_Sn y,
-            rw x_eq_n,                                          clear x_eq_n,
-            exact PT43 n,
+            left,
+            rw x_eq_Z,
+            exact PT40 n,
         },
-        {   
-            specialize IH x x_eq_n,                     clear x_eq_n,
-            cases IH,
-            {
-                rcases IH with ⟨ a, rfl, a_nonzero ⟩,
-                left,
-                use S a,
-                refine ⟨ _, (PA1 a).symm ⟩,
-                rw [PA4],
-            },
-            {
-                right,
-                exact lt_Sneq_imp_Slt n x IH x_neq_Sn.symm,
-            },
+        {
+          rcases exists_pred x x_eq_Z with ⟨ z, rfl ⟩,
+          rw not_to_not (S_iff_both_sides z n) at x_neq_Sn,
+          specialize IH z x_neq_Sn,
+          cases IH;
+          have := PT34 _ _ (S Z) IH,
+          {
+            left,
+            rw [add_one, add_one] at this,
+            exact this,
+          },
+          {
+            right,
+            rw [add_one, add_one] at this,
+            exact this,
+          },
         },
     },
 end
