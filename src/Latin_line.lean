@@ -126,28 +126,16 @@ begin
 end
 
 
--- lemma smth {α : Type} [fintype α] {f : α → α}
--- : set.maps_to f (coe finset.univ) (coe (finset.image f finset.univ))
-
-
--------------------------------------------------------------------------------------------------
--- Define latin square object
-structure latin_function (len : ℕ):=
-(nonempty : len > 0)
-(map : (fin len) → (fin len))
-(is_inj : injective map)
-
-
-theorem image_eq_domain (n : ℕ) (L : latin_function n) :
-  (finset.image L.map finset.univ) = finset.univ :=
+theorem inj_maps_to_self {len : ℕ} {f : (fin len) → (fin len)} (H : injective f) :
+  (finset.image f finset.univ) = finset.univ :=
 begin
-  have image_sub_domain : (finset.image L.map finset.univ) ⊆ finset.univ := (finset.image L.map finset.univ).subset_univ,
+  have image_sub_domain : (finset.image f finset.univ) ⊆ finset.univ := (finset.image f finset.univ).subset_univ,
   cases has_subset.subset.eq_or_ssubset image_sub_domain with image_eq_domain image_ssub_domain;
   clear image_sub_domain,
   exact image_eq_domain,
 
   exfalso,
-  have maps_to : set.maps_to L.map (coe finset.univ) (coe (finset.image L.map finset.univ)),
+  have maps_to : set.maps_to f (coe finset.univ) (coe (finset.image f finset.univ)),
   {
     intros a ha,
     rw finset.mem_coe at ha,
@@ -159,92 +147,310 @@ begin
 
   have card_image_ssub_domain := finset.card_lt_card image_ssub_domain,
   have := finset.exists_ne_map_eq_of_card_lt_of_maps_to card_image_ssub_domain maps_to,
-  rcases this with ⟨ a, a_ext, b, b_ext, a_neq_b, H ⟩,
-  exact a_neq_b (L.is_inj H),
+  rcases this with ⟨ a, a_ext, b, b_ext, a_neq_b, H1 ⟩,
+  exact a_neq_b (H H1),
 end
 
 
-lemma latin_function_injective (len : ℕ) (f : latin_function len) : injective f.map :=
-begin
-  intros i j h,
-  exact f.is_inj h,
-end
-
-
-lemma latin_function_surjective (len : ℕ) (f : latin_function len) : surjective f.map :=
+lemma surj_of_inj {len : ℕ} {f : (fin len) → (fin len)} (H : injective f) : surjective f :=
 begin
   intros i,
   have i_in_image : i ∈ finset.univ := finset.mem_univ i,
-  rw ← image_eq_domain len f at i_in_image,
+
+  rw ← inj_maps_to_self H at i_in_image,
   rw finset.mem_image at i_in_image,
   rcases i_in_image with ⟨ j, j_in_univ, j_maps_to_i ⟩,
   exact ⟨ j, j_maps_to_i ⟩,
 end
 
 
-theorem latin_function_bijective (len : ℕ) (f : latin_function len) : bijective f.map :=
+theorem bij_of_inj {len : ℕ} {f : (fin len) → (fin len)} (H : injective f) : bijective f :=
+⟨ H, surj_of_inj H ⟩
+
+theorem inv_fun_of_inj {len : ℕ} {f : (fin len) → (fin len)} (H : injective f) :
+ ∃ g : (fin len) → (fin len), right_inverse f g ∧ left_inverse f g :=
+  function.bijective_iff_has_inverse.1 (bij_of_inj H)
+
+-------------------------------------------------------------------------------------------------
+-- Define latin square object
+structure latin1 (len : ℕ):=
+(nonempty : len > 0)
+(map : (fin len) → (fin len))
+(is_inj : injective map)
+
+-- nonempty from fin.pos
+
+
+lemma latin1.ext {len : ℕ} (L1 L2 : latin1 len) : L1.map = L2.map → L1 = L2 :=
+begin
+  intros H,
+  cases L1,
+  cases L2,
+  congr,
+  exact H,
+end
+
+
+lemma latin1.ext_iff {len : ℕ} (L1 L2 : latin1 len) : L1 = L2 ↔ L1.map = L2.map :=
 begin
   split,
-  exact latin_function_injective len f,
-  exact latin_function_surjective len f,
+    intro H,
+    rw H,
+    apply latin1.ext,
 end
 
 
-def permute_index {len : ℕ} (f : latin_function len) {g : (fin len) → (fin len)} (g_inj : injective g) :
- latin_function len :=
+theorem latin1_maps_to_self {len : ℕ} (L : latin1 len) : (finset.image L.map finset.univ) = finset.univ := inj_maps_to_self L.is_inj
+
+lemma surj_of_latin1 {len : ℕ} (f : latin1 len) : surjective f.map := surj_of_inj f.is_inj
+
+theorem bij_of_latin1 {len : ℕ} (f : latin1 len) : bijective f.map := bij_of_inj f.is_inj
+
+-- theorem inv_of_latin1 {len : ℕ} (f : latin1 len) : ∃ g : latin1 len, right_inverse f.map g.map ∧ left_inverse f.map g.map :=
+-- begin
+--   have fmap_bij := bij_of_latin1 f,
+--   have : ∀ x : fin len, ∃ y : fin len, f.map y = x,
+--   {
+--     intro x,
+--     have x_in_image : x ∈ finset.univ := finset.mem_univ x,
+--     rw ← latin1_maps_to_self f at x_in_image,
+--     rw finset.mem_image at x_in_image,
+--     rcases x_in_image with ⟨ y, y_in_univ, y_maps_to_x ⟩,
+--     exact ⟨ y, y_maps_to_x ⟩,
+--   },
+
+--   have to_nat := fin.fin_to_nat len,
+
+--   -- define inverse of fmap as a function using nat.find
+--   have exist_in_nat : ∀ x : fin len, ∃ y : ℕ, f.map (@fin.of_nat' len (ne_zero.of_pos f.nonempty) y) = x,
+--   {
+--     intro x,
+--     have := this x,
+--     rcases this with ⟨ y, y_maps_to_x ⟩,
+--     use y.val,
+--     rw ← y_maps_to_x,
+--     simp only [fin.coe_coe_eq_self, fin.val_eq_coe, eq_self_iff_true, fin.of_nat'_eq_coe],
+--   },
+
+--   have fmap_inv : ∃ g : fin len → fin len, ∀ x : fin len, f.map (g x) = x ∧ g (f.map x) = x,
+--   {
+--     have g : fin len → fin len,
+--     {
+--       intro x,
+--       cases exist_in_nat x,
+--       have := nat.find (exist_in_nat x),
+--       exact fin.of_nat' len (ne_zero.of_pos f.nonempty) this,
+--     },
+--     have := exist_in_nat x,
+--   },
+
+--   -- use ⟨ f.nonempty, fmap_inv, _ ⟩,
+
+--   -- prove that fmap_inv is inverse of fmap
+--   have fmap_inv_is_inv : right_inverse f.map fmap_inv ∧ left_inverse f.map fmap_inv,
+--   {
+--     split,
+--     {
+--       intro x,
+
+--       rw ← (nat.find_spec (exist_in_nat x)),
+--       simp only [fin.of_nat'_eq_coe],
+--       exact nat.find_min (exist_in_nat x) (nat.find_spec (exist_in_nat x)),
+--     },
+--     {
+--       intro x,
+--       have := nat.find_spec (exist_in_nat x),
+--       rw ← this,
+--       simp only [fin.of_nat'_eq_coe, fin.coe_coe_eq_self, fin.val_eq_coe, eq_self_iff_true],
+--       exact nat.find_min (exist_in_nat x) (nat.find_spec (exist_in_nat x)),
+--     }
+--   },
+  
+-- end
+
+-------------------------------------------------------------------------------------------------
+
+
+structure latin1_hom (len : ℕ) : Type :=
+  (to_fun : latin1 len → latin1 len)
+
+
+lemma latin1_hom.ext {len : ℕ} (f g : latin1_hom len) : f.to_fun = g.to_fun → f = g :=
 begin
-  refine ⟨ f.nonempty, (g ∘ f.map), _ ⟩,
-
-  rw injective.of_comp_iff,
-  exact f.is_inj,
-  exact g_inj,
+  intros H,
+  cases f,
+  cases g,
+  congr,
+  exact H,
 end
 
 
-def latin_function_equiv (len : ℕ) (f : latin_function len) : equiv (fin len) (fin len) :=
+lemma latin1_hom.ext_iff {len : ℕ} (f g : latin1_hom len) : f = g ↔ f.to_fun = g.to_fun :=
 begin
-  refl,
+  split,
+    intro H,
+    rw H,
+    apply latin1_hom.ext,
 end
 
 
-noncomputable def transpose (len : ℕ) (f : latin_function len) : latin_function len :=
+def permi_hom1 {len : ℕ} {g : (fin len) → (fin len)} (g_inj : injective g) : latin1_hom len :=
 {
-  map := 
+  to_fun := 
   begin
-    choose g hg using function.bijective_iff_has_inverse.1 (latin_function_bijective len f),
-    exact g,
+    intro f,
+    refine ⟨ f.nonempty, (g ∘ f.map), _ ⟩,
+    
+    rw injective.of_comp_iff,
+    exact f.is_inj,
+    exact g_inj,
   end,
-
-  is_inj :=
-  begin
-    intros a b H,
-    have _x : left_inverse (classical.some _) f.map ∧ right_inverse (classical.some _) f.map := 
-    classical.some_spec (function.bijective_iff_has_inverse.1 (latin_function_bijective len f)),
-    rcases _x with ⟨ left_inverse, right_inverse ⟩,
-    have left_inverse_r := function.right_inverse.left_inverse right_inverse,
-    exact (function.left_inverse.injective left_inverse_r) H,
-  end,
-
-  nonempty := f.nonempty,
 }
 
 
--- define hypercube object where each side has length len and takes dim number of inputs
-structure hypercube_dim2 (len : ℕ) :=
-(nonempty : len > 0)
-(map : (fin len) → (fin len) → (fin len))
-(is_inj : injective map)
+def perme_hom1 {len : ℕ} {g : (fin len) → (fin len)} (g_inj : injective g) : latin1_hom len :=
+{
+  to_fun := 
+  begin
+    intro f,
+    refine ⟨ f.nonempty, (f.map ∘ g), _ ⟩,
+    
+    rw injective.of_comp_iff,
+    exact g_inj,
+    exact f.is_inj,
+  end,
+}
 
 
-structure hypercube_dim3 (len : ℕ) :=
-(nonempty : len > 0)
-(map : (fin len) → (fin len) → (fin len) → (fin len))
-(is_inj : injective map)
+def id_hom1 {len : ℕ} : latin1_hom len := permi_hom1 (injective_id)
 
 
-structure hypercube_dim4 (len : ℕ) :=
-(nonempty : len > 0)
-(map : (fin len) → (fin len) → (fin len) → (fin len) → (fin len))
-(is_inj : injective map)
+noncomputable def transpose_hom1 {len : ℕ} : latin1_hom len :=
+{
+  to_fun := 
+  begin
+    intro f,
+    choose g hg using function.bijective_iff_has_inverse.1 (bij_of_latin1 f),
+    refine ⟨ f.nonempty, g, _ ⟩,
+
+    intros a b H,
+    rcases hg with ⟨ left_inverse, right_inverse ⟩,
+    have left_inverse_r := function.right_inverse.left_inverse right_inverse,
+    exact left_inverse_r.injective H,
+  end,
+}
 
 
+noncomputable def normalise_hom1 {len : ℕ} : latin1_hom len :=
+begin
+  refine ⟨ λ f, _ ⟩,
+  choose g hg using function.bijective_iff_has_inverse.1 (bij_of_latin1 f),
+  have g_inj : injective g := left_inverse.injective (function.right_inverse.left_inverse hg.2),
+  exact (permi_hom1 g_inj).to_fun f,
+end
+
+
+def latin1_hom_comp {len : ℕ} (f g : latin1_hom len) : latin1_hom len :=
+begin
+  refine ⟨ λ h, _ ⟩,
+  exact ((f.to_fun ∘ g.to_fun) h),
+end
+
+
+lemma id_hom1_id {len : ℕ} (f : latin1 len) : (id_hom1.to_fun f) = f :=
+begin
+  apply latin1.ext,
+  unfold id_hom1,
+  unfold permi_hom1,
+  unfold latin1_hom.to_fun,
+  unfold latin1.map,
+  rw function.comp.left_id,
+end
+
+
+def latin1_equiv {len : ℕ} (f g : latin1 len) : Prop :=
+  ∃ hom : latin1_hom len, hom.to_fun f = hom.to_fun g
+
+
+lemma latin1_equiv_refl {len : ℕ} (f : latin1 len) : latin1_equiv f f :=
+begin
+  use id_hom1,
+end
+
+
+lemma latin1_equiv_symm {len : ℕ} (f g : latin1 len) : latin1_equiv f g → latin1_equiv g f :=
+begin
+  intro H,
+  rcases H with ⟨ hom, H ⟩,
+  use hom,
+  exact H.symm,
+end
+
+
+lemma normalise_hom1_returns_id {len : ℕ} (f : latin1 len) : (normalise_hom1.to_fun f).map = id :=
+begin
+  unfold normalise_hom1,
+  unfold permi_hom1,
+  apply function.left_inverse.id,
+  exact (classical.some_spec (function.bijective_iff_has_inverse.1 (bij_of_latin1 f))).1,
+end
+
+
+theorem all_latin1_equiv {len : ℕ} (f g : latin1 len) : latin1_equiv f g :=
+begin
+  use normalise_hom1,
+  rw latin1.ext_iff,
+  rw normalise_hom1_returns_id,
+  rw normalise_hom1_returns_id,
+end
+
+
+-- structure latin1_isom (len : ℕ) : Type :=
+--   (to_hom : latin1_hom len)
+--   (inv : latin1_hom len)
+--   (right_inv : to_hom.to_fun ∘ inv.to_fun = id )
+--   (left_inv : inv.to_fun ∘ to_hom.to_fun = id )
+
+
+-- lemma latin1_isom.ext {len : ℕ} (f g : latin1_isom len) : f.to_hom = g.to_hom → f = g :=
+-- begin
+--   intros H,
+--   cases f,
+--   cases g,
+--   congr,
+--   exact H,
+--   sorry,
+-- end
+
+
+-- lemma latin1_isom.ext_iff {len : ℕ} (f g : latin1_isom len) : f = g ↔ f.to_hom = g.to_hom :=
+-- begin
+--   split,
+--     intro H,
+--     rw H,
+--     apply latin1_isom.ext,
+-- end
+
+
+-- def perm_isom1 {len : ℕ} {g : (fin len) → (fin len)} (g_inj : injective g) : latin1_isom len :=
+-- {
+--   to_hom := permi_hom1 g_inj,
+--   inv := 
+--     {
+--       to_fun := 
+--       begin
+--         intro f,
+--         choose h hh using inv_fun_of_inj g_inj,
+--         refine ⟨ f.nonempty, ( h ∘ f.map), _ ⟩,
+        
+--         rw injective.of_comp_iff,
+--         exact f.is_inj,
+--         exact left_inverse.injective (function.right_inverse.left_inverse hh.2),
+--       end,
+--     },
+--   right_inv :=
+--   begin
+--     simp,
+--     rw function.comp.left_id,
+--   end,
+-- }

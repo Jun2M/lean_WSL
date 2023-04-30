@@ -11,7 +11,7 @@ def is_latin1 {len : ℕ} (f : (fin len) → (fin len)) : Prop := injective f
 def is_normal1 {len : ℕ} (f : (fin len) → (fin len)) : Prop := f = id
 
 
-theorem latin1_maps_to {len : ℕ} {f : (fin len) → (fin len)} (H : is_latin1 f) :
+theorem latin1_maps_to_self' {len : ℕ} {f : (fin len) → (fin len)} (H : is_latin1 f) :
   (finset.image f finset.univ) = finset.univ :=
 begin
   have image_sub_domain : (finset.image f finset.univ) ⊆ finset.univ := (finset.image f finset.univ).subset_univ,
@@ -37,30 +37,30 @@ begin
 end
 
 
-lemma surj_of_latin1 {len : ℕ} {f : (fin len) → (fin len)} (H : is_latin1 f) : surjective f :=
+lemma surj_of_latin1' {len : ℕ} {f : (fin len) → (fin len)} (H : is_latin1 f) : surjective f :=
 begin
   intros i,
   have i_in_image : i ∈ finset.univ := finset.mem_univ i,
-  rw ← latin1_maps_to H at i_in_image,
+  rw ← latin1_maps_to_self' H at i_in_image,
   rw finset.mem_image at i_in_image,
   rcases i_in_image with ⟨ j, j_in_univ, j_maps_to_i ⟩,
   exact ⟨ j, j_maps_to_i ⟩,
 end
 
 
-theorem bij_of_latin1 {len : ℕ} {f : (fin len) → (fin len)} (H : is_latin1 f) : bijective f :=
-⟨ H, surj_of_latin1 H ⟩
+theorem bij_of_latin1' {len : ℕ} {f : (fin len) → (fin len)} (H : is_latin1 f) : bijective f :=
+⟨ H, surj_of_latin1' H ⟩
 
 
 -----------------------------------------------------------------------------------------------------
 
 
-structure latin1_hom {len : ℕ} : Type :=
+structure latin1_hom' {len : ℕ} : Type :=
   (to_fun : ((fin len) → (fin len)) → ((fin len) → (fin len)))
-  (map_latin1 : ∀ f : (fin len) → (fin len), is_latin1 f → is_latin1 (to_fun f))
+  (map_latin1 {f : (fin len) → (fin len)} : is_latin1 f → is_latin1 (to_fun f))
 
 
-def perm_hom_latin1 {len : ℕ} {g : (fin len) → (fin len)} (g_inj : injective g) : latin1_hom :=
+def perm_hom_latin1' {len : ℕ} {g : (fin len) → (fin len)} (g_inj : injective g) : latin1_hom' :=
 {
   to_fun := 
     begin
@@ -143,19 +143,13 @@ noncomputable def transpose_hom_latin1 {len : ℕ} : latin1_hom :=
 
 
 
-
-
-
-
-
-
 theorem latin1_canbe_normal1ised {len : ℕ} {f : (fin len) → (fin len)} (H : is_latin1 f) :
   ∃ g : (fin len) → (fin len), injective g ∧ is_latin1 (g ∘ f) ∧ is_normal1 (g ∘ f) :=
 begin
-  choose g hg using function.bijective_iff_has_inverse.1 (bij_of_latin1 H),
+  choose g hg using function.bijective_iff_has_inverse.1 (bij_of_latin1' H),
   use g,
   have g_inj : injective g := left_inverse.injective (function.right_inverse.left_inverse hg.2),
-  refine ⟨ g_inj, latin1_canbe_permuted H g_inj, left_inverse.id hg.1 ⟩,
+  refine ⟨ g_inj, (perm_hom_latin1' g_inj).map_latin1 H, left_inverse.id hg.1 ⟩,
 end
 
 
