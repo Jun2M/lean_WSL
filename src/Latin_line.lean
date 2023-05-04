@@ -171,12 +171,16 @@ theorem inv_fun_of_inj {len : ℕ} {f : (fin len) → (fin len)} (H : injective 
  ∃ g : (fin len) → (fin len), right_inverse f g ∧ left_inverse f g :=
   function.bijective_iff_has_inverse.1 (bij_of_inj H)
 
+theorem right_inv_ext {α β : Type} {f : α → β} {g : β → α} (H : right_inverse f g) (x : α) : g (f x) = x :=
+  H x
+  -- what!!! that is so good
+
 -------------------------------------------------------------------------------------------------
 -- Define latin square object
 structure latin1 (len : ℕ):=
-(nonempty : len > 0)
-(map : (fin len) → (fin len))
-(is_inj : injective map)
+  (nonempty : len > 0)
+  (map : (fin len) → (fin len))
+  (is_inj : injective map)
 
 -- nonempty from fin.pos
 
@@ -271,138 +275,115 @@ theorem bij_of_latin1 {len : ℕ} (f : latin1 len) : bijective f.map := bij_of_i
 -------------------------------------------------------------------------------------------------
 
 
-structure latin1_hom (len : ℕ) : Type :=
-  (to_fun : latin1 len → latin1 len)
+-- structure latin1_hom (len : ℕ) : Type :=
+--   (to_fun : latin1 len → latin1 len)
 
 
-lemma latin1_hom.ext {len : ℕ} (f g : latin1_hom len) : f.to_fun = g.to_fun → f = g :=
+-- lemma latin1_hom.ext {len : ℕ} (f g : latin1_hom len) : f.to_fun = g.to_fun → f = g :=
+-- begin
+--   intros H,
+--   cases f,
+--   cases g,
+--   congr,
+--   exact H,
+-- end
+
+
+-- lemma latin1_hom.ext_iff {len : ℕ} (f g : latin1_hom len) : f = g ↔ f.to_fun = g.to_fun :=
+-- begin
+--   split,
+--     intro H,
+--     rw H,
+--     apply latin1_hom.ext,
+-- end
+
+
+theorem permi1 {len : ℕ} {g : (fin len) → (fin len)} (f : latin1 len) (g_inj : injective g) : 
+  ∃ fg : latin1 len, fg.map = g ∘ f.map :=
 begin
-  intros H,
-  cases f,
-  cases g,
-  congr,
-  exact H,
+  use { nonempty := f.nonempty, map := g ∘ f.map, is_inj := (injective.of_comp_iff g_inj f.map).mpr f.is_inj },
 end
 
-
-lemma latin1_hom.ext_iff {len : ℕ} (f g : latin1_hom len) : f = g ↔ f.to_fun = g.to_fun :=
+theorem perme1 {len : ℕ} {g : (fin len) → (fin len)} (f : latin1 len) (g_inj : injective g) : 
+  ∃ gf : latin1 len, gf.map = f.map ∘ g :=
 begin
-  split,
-    intro H,
-    rw H,
-    apply latin1_hom.ext,
+  use { nonempty := f.nonempty, map := f.map ∘ g, is_inj := (injective.of_comp_iff f.is_inj g).mpr g_inj },
 end
 
-
-def permi_hom1 {len : ℕ} {g : (fin len) → (fin len)} (g_inj : injective g) : latin1_hom len :=
-{
-  to_fun := 
-  begin
-    intro f,
-    refine ⟨ f.nonempty, (g ∘ f.map), _ ⟩,
-    
-    rw injective.of_comp_iff,
-    exact f.is_inj,
-    exact g_inj,
-  end,
-}
-
-
-def perme_hom1 {len : ℕ} {g : (fin len) → (fin len)} (g_inj : injective g) : latin1_hom len :=
-{
-  to_fun := 
-  begin
-    intro f,
-    refine ⟨ f.nonempty, (f.map ∘ g), _ ⟩,
-    
-    rw injective.of_comp_iff,
-    exact g_inj,
-    exact f.is_inj,
-  end,
-}
-
-
-def id_hom1 {len : ℕ} : latin1_hom len := permi_hom1 (injective_id)
-
-
-noncomputable def transpose_hom1 {len : ℕ} : latin1_hom len :=
-{
-  to_fun := 
-  begin
-    intro f,
-    choose g hg using function.bijective_iff_has_inverse.1 (bij_of_latin1 f),
-    refine ⟨ f.nonempty, g, _ ⟩,
-
-    intros a b H,
-    rcases hg with ⟨ left_inverse, right_inverse ⟩,
-    have left_inverse_r := function.right_inverse.left_inverse right_inverse,
-    exact left_inverse_r.injective H,
-  end,
-}
-
-
-noncomputable def normalise_hom1 {len : ℕ} : latin1_hom len :=
+theorem push1 {len : ℕ} (f : latin1 len) : ∃ f' : latin1 len, left_inverse f'.map f.map ∧ right_inverse f'.map f.map :=
 begin
-  refine ⟨ λ f, _ ⟩,
   choose g hg using function.bijective_iff_has_inverse.1 (bij_of_latin1 f),
   have g_inj : injective g := left_inverse.injective (function.right_inverse.left_inverse hg.2),
-  exact (permi_hom1 g_inj).to_fun f,
+  use { nonempty := f.nonempty, map := g, is_inj := g_inj },
+  exact hg,
 end
 
-
-def latin1_hom_comp {len : ℕ} (f g : latin1_hom len) : latin1_hom len :=
-begin
-  refine ⟨ λ h, _ ⟩,
-  exact ((f.to_fun ∘ g.to_fun) h),
-end
+def is_normal1 {len : ℕ} (f : latin1 len) : Prop := f.map = id
 
 
-lemma id_hom1_id {len : ℕ} (f : latin1 len) : (id_hom1.to_fun f) = f :=
-begin
-  apply latin1.ext,
-  unfold id_hom1,
-  unfold permi_hom1,
-  unfold latin1_hom.to_fun,
-  unfold latin1.map,
-  rw function.comp.left_id,
-end
+
+-- noncomputable def normalise_hom1 {len : ℕ} : latin1_hom len :=
+-- begin
+--   refine ⟨ λ f, _ ⟩,
+--   choose g hg using function.bijective_iff_has_inverse.1 (bij_of_latin1 f),
+--   have g_inj : injective g := left_inverse.injective (function.right_inverse.left_inverse hg.2),
+--   exact (permi_hom1 g_inj).to_fun f,
+-- end
 
 
-def latin1_equiv {len : ℕ} (f g : latin1 len) : Prop :=
-  ∃ hom : latin1_hom len, hom.to_fun f = hom.to_fun g
+-- def latin1_hom_comp {len : ℕ} (f g : latin1_hom len) : latin1_hom len :=
+-- begin
+--   refine ⟨ λ h, _ ⟩,
+--   exact ((f.to_fun ∘ g.to_fun) h),
+-- end
 
 
-lemma latin1_equiv_refl {len : ℕ} (f : latin1 len) : latin1_equiv f f :=
-begin
-  use id_hom1,
-end
+-- lemma id_hom1_id {len : ℕ} (f : latin1 len) : (id_hom1.to_fun f) = f :=
+-- begin
+--   apply latin1.ext,
+--   unfold id_hom1,
+--   unfold permi_hom1,
+--   unfold latin1_hom.to_fun,
+--   unfold latin1.map,
+--   rw function.comp.left_id,
+-- end
 
 
-lemma latin1_equiv_symm {len : ℕ} (f g : latin1 len) : latin1_equiv f g → latin1_equiv g f :=
-begin
-  intro H,
-  rcases H with ⟨ hom, H ⟩,
-  use hom,
-  exact H.symm,
-end
+-- def latin1_equiv {len : ℕ} (f g : latin1 len) : Prop :=
+--   ∃ hom : latin1_hom len, hom.to_fun f = hom.to_fun g
 
 
-lemma normalise_hom1_returns_id {len : ℕ} (f : latin1 len) : (normalise_hom1.to_fun f).map = id :=
-begin
-  unfold normalise_hom1,
-  unfold permi_hom1,
-  apply function.left_inverse.id,
-  exact (classical.some_spec (function.bijective_iff_has_inverse.1 (bij_of_latin1 f))).1,
-end
+-- lemma latin1_equiv_refl {len : ℕ} (f : latin1 len) : latin1_equiv f f :=
+-- begin
+--   use id_hom1,
+-- end
 
 
-theorem all_latin1_equiv {len : ℕ} (f g : latin1 len) : latin1_equiv f g :=
-begin
-  use normalise_hom1,
-  rw latin1.ext_iff,
-  rw normalise_hom1_returns_id,
-  rw normalise_hom1_returns_id,
-end
+-- lemma latin1_equiv_symm {len : ℕ} (f g : latin1 len) : latin1_equiv f g → latin1_equiv g f :=
+-- begin
+--   intro H,
+--   rcases H with ⟨ hom, H ⟩,
+--   use hom,
+--   exact H.symm,
+-- end
+
+
+-- lemma normalise_hom1_returns_id {len : ℕ} (f : latin1 len) : (normalise_hom1.to_fun f).map = id :=
+-- begin
+--   unfold normalise_hom1,
+--   unfold permi_hom1,
+--   apply function.left_inverse.id,
+--   exact (classical.some_spec (function.bijective_iff_has_inverse.1 (bij_of_latin1 f))).1,
+-- end
+
+
+-- theorem all_latin1_equiv {len : ℕ} (f g : latin1 len) : latin1_equiv f g :=
+-- begin
+--   use normalise_hom1,
+--   rw latin1.ext_iff,
+--   rw normalise_hom1_returns_id,
+--   rw normalise_hom1_returns_id,
+-- end
 
 
 -- structure latin1_isom (len : ℕ) : Type :=
